@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budapest Időjárás Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B00;
+    --orange-light: #FF8C00;
+    --orange-pale: #FFB347;
+    --dark: #1A0A00;
+    --dark2: #2A1200;
+    --dark3: #3A1C00;
+    --card: rgba(255,107,0,0.08);
+    --card-border: rgba(255,107,0,0.2);
+    --text: #FFF5E6;
+    --text-muted: rgba(255,245,230,0.5);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Háttér textúra */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(255,107,0,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, rgba(255,140,0,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* FEJLÉC */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .header-left {}
+  .city {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 3.2em;
+    letter-spacing: 4px;
+    color: var(--orange);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(255,107,0,0.4);
+  }
+  .subtitle {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .update-label {
+    font-size: 0.65em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .update-time {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.4em;
+    color: var(--orange-pale);
+    letter-spacing: 2px;
+  }
+  .live-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: #00ff88;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+
+  /* FŐKÁRTYA */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .current-card {
+    background: linear-gradient(135deg, rgba(255,107,0,0.15), rgba(255,140,0,0.05));
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .current-card::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(255,107,0,0.15), transparent 70%);
+    border-radius: 50%;
+  }
+
+  .weather-emoji {
+    font-size: 3.5em;
+    line-height: 1;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 12px rgba(255,165,0,0.5));
+  }
+  .temp-big {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 5em;
+    line-height: 1;
+    color: var(--orange);
+    text-shadow: 0 0 30px rgba(255,107,0,0.4);
+    letter-spacing: 2px;
+  }
+  .temp-big span {
+    font-size: 0.4em;
+    color: var(--orange-pale);
+    vertical-align: super;
+  }
+  .weather-desc {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* STAT KÁRTYÁK */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255,107,0,0.13);
+  }
+  .stat-icon { font-size: 1.4em; margin-bottom: 6px; }
+  .stat-label {
+    font-size: 0.65em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.8em;
+    color: var(--orange-pale);
+    letter-spacing: 1px;
+    line-height: 1.1;
+  }
+  .stat-unit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.5em;
+    color: var(--text-muted);
+  }
+
+  /* AI TANÁCS */
+  .ai-card {
+    background: linear-gradient(135deg, rgba(255,107,0,0.1), rgba(255,179,71,0.05));
+    border: 1px solid rgba(255,179,71,0.25);
+    border-radius: 20px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-card::after {
+    content: 'AI';
+    position: absolute;
+    right: 20px; top: 14px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 3em;
+    color: rgba(255,107,0,0.07);
+    letter-spacing: 3px;
+    pointer-events: none;
+  }
+  .ai-avatar {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--orange), var(--orange-light));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(255,107,0,0.3);
+  }
+  .ai-label {
+    font-size: 0.65em;
+    color: var(--orange-pale);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 5px;
+  }
+  .ai-text {
+    font-size: 0.92em;
+    color: var(--text);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* GRAFIKON */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.3em;
+    letter-spacing: 2px;
+    color: var(--orange-pale);
+  }
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 0.7em;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .chart-area {
+    position: relative;
+    height: 160px;
+  }
+  canvas { width: 100% !important; }
+
+  /* NAPI MAX/MIN */
+  .minmax-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .minmax-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .minmax-icon {
+    font-size: 2em;
+    filter: drop-shadow(0 0 8px rgba(255,107,0,0.3));
+  }
+  .minmax-label {
+    font-size: 0.65em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .minmax-value {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.2em;
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  .max-val { color: #FF6B00; }
+  .min-val { color: #74b9ff; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--card-border);
+    font-size: 0.65em;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* ANIMÁCIÓK */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeIn 0.6s forwards;
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in:nth-child(1) { animation-delay: 0.05s; }
+  .fade-in:nth-child(2) { animation-delay: 0.15s; }
+  .fade-in:nth-child(3) { animation-delay: 0.25s; }
+  .fade-in:nth-child(4) { animation-delay: 0.35s; }
+  .fade-in:nth-child(5) { animation-delay: 0.45s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- FEJLÉC -->
+  <div class="header fade-in">
+    <div class="header-left">
+      <div class="city">📍 Budapest</div>
+      <div class="subtitle">Időjárás Dashboard · Valós idejű</div>
+    </div>
+    <div class="header-right">
+      <div class="update-label"><span class="live-dot"></span>Frissítve</div>
+      <div class="update-time" id="updateTime">--:--</div>
+    </div>
+  </div>
+
+  <!-- FŐKÁRTYA + STAT KÁRTYÁK -->
+  <div class="main-grid fade-in">
+    <div class="current-card">
+      <div>
+        <div class="weather-emoji" id="weatherEmoji">🌡️</div>
+        <div class="temp-big" id="currentTemp">--<span>°C</span></div>
+        <div class="weather-desc" id="weatherDesc">Adatok betöltése...</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🌡️</div>
+        <div class="stat-label">Érzett hőmérséklet</div>
+        <div class="stat-value" id="hoerzet">--<span class="stat-unit">°C</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💧</div>
+        <div class="stat-label">Páratartalom</div>
+        <div class="stat-value" id="paratartalom">--<span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🌬️</div>
+        <div class="stat-label">Szélsebesség</div>
+        <div class="stat-value" id="szel">--<span class="stat-unit">km/h</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">☀️</div>
+        <div class="stat-label">UV Index</div>
+        <div class="stat-value" id="uv">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAPI MAX/MIN -->
+  <div class="minmax-row fade-in">
+    <div class="minmax-card">
+      <div class="minmax-icon">🔺</div>
+      <div>
+        <div class="minmax-label">Mai maximum</div>
+        <div class="minmax-value max-val" id="napiMax">--°</div>
+      </div>
+    </div>
+    <div class="minmax-card">
+      <div class="minmax-icon">🔻</div>
+      <div>
+        <div class="minmax-label">Mai minimum</div>
+        <div class="minmax-value min-val" id="napiMin">--°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI TANÁCS -->
+  <div class="ai-card fade-in">
+    <div class="ai-avatar">🤖</div>
+    <div>
+      <div class="ai-label">AI Öltözködési tanács</div>
+      <div class="ai-text" id="aiTanacs">Tanács betöltése...</div>
+    </div>
+  </div>
+
+  <!-- GRAFIKON -->
+  <div class="chart-card fade-in">
+    <div class="chart-header">
+      <div class="chart-title">Hőmérséklet változása</div>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:#FF6B00"></span>Hőmérséklet</span>
+        <span><span class="legend-dot" style="background:#74b9ff"></span>Érzet</span>
+      </div>
+    </div>
+    <div class="chart-area">
+      <canvas id="tempChart"></canvas>
+    </div>
+  </div>
+
+  <div class="footer fade-in">
+    Budapest Időjárás Dashboard · Automatikusan frissül óránként · Adatok: Open-Meteo API
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ==========================================
+// ADATOK BETÖLTÉSE OPEN-METEO API-BÓL
+// ==========================================
+async function loadWeather() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=47.4979&longitude=19.0402&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,uv_index&hourly=temperature_2m,apparent_temperature&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Budapest&forecast_days=1&past_days=1';
+    const res = await fetch(url);
+    const data = await res.json();
+    updateUI(data);
+    drawChart(data);
+  } catch(e) {
+    console.error('API hiba:', e);
+    document.getElementById('weatherDesc').textContent = 'Kapcsolódási hiba – kérlek frissítsd az oldalt';
+  }
+}
+
+function weatherInfo(code) {
+  if (code === 0) return { emoji: '☀️', text: 'Tiszta égbolt' };
+  if (code <= 2) return { emoji: '⛅', text: 'Részben felhős' };
+  if (code <= 3) return { emoji: '☁️', text: 'Borult' };
+  if (code <= 49) return { emoji: '🌫️', text: 'Ködös' };
+  if (code <= 59) return { emoji: '🌦️', text: 'Szitálás' };
+  if (code <= 69) return { emoji: '🌧️', text: 'Eső' };
+  if (code <= 79) return { emoji: '❄️', text: 'Hóesés' };
+  if (code <= 84) return { emoji: '🌨️', text: 'Hózápor' };
+  if (code <= 99) return { emoji: '⛈️', text: 'Zivatar' };
+  return { emoji: '🌡️', text: 'Ismeretlen' };
+}
+
+function updateUI(data) {
+  const c = data.current;
+  const d = data.daily;
+  const now = new Date();
+  const timeStr = now.toLocaleString('hu-HU', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+  document.getElementById('updateTime').textContent = timeStr;
+  document.getElementById('currentTemp').innerHTML = `${c.temperature_2m}<span>°C</span>`;
+  document.getElementById('hoerzet').innerHTML = `${c.apparent_temperature}<span class="stat-unit">°C</span>`;
+  document.getElementById('paratartalom').innerHTML = `${c.relative_humidity_2m}<span class="stat-unit">%</span>`;
+  document.getElementById('szel').innerHTML = `${c.wind_speed_10m}<span class="stat-unit">km/h</span>`;
+  document.getElementById('uv').textContent = c.uv_index ?? '--';
+  document.getElementById('napiMax').textContent = `${d.temperature_2m_max[0]}°`;
+  document.getElementById('napiMin').textContent = `${d.temperature_2m_min[0]}°`;
+
+  const info = weatherInfo(c.weather_code);
+  document.getElementById('weatherEmoji').textContent = info.emoji;
+  document.getElementById('weatherDesc').textContent = info.text;
+}
+
+// ==========================================
+// GRAFIKON
+// ==========================================
+function drawChart(data) {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const hourly = data.hourly;
+
+  // Utolsó 12 óra + következő 4 óra
+  const startIdx = Math.max(0, currentHour - 8 + 24);
+  const labels = [];
+  const temps = [];
+  const feels = [];
+
+  for (let i = startIdx; i < startIdx + 12 && i < hourly.time.length; i++) {
+    const t = new Date(hourly.time[i]);
+    labels.push(t.getHours() + ':00');
+    temps.push(hourly.temperature_2m[i]);
+    feels.push(hourly.apparent_temperature[i]);
+  }
+
+  const ctx = document.getElementById('tempChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Hőmérséklet',
+          data: temps,
+          borderColor: '#FF6B00',
+          backgroundColor: 'rgba(255,107,0,0.12)',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#FF6B00',
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          fill: true,
+          tension: 0.4,
+        },
+        {
+          label: 'Érzett hőmérséklet',
+          data: feels,
+          borderColor: '#74b9ff',
+          backgroundColor: 'rgba(116,185,255,0.06)',
+          borderWidth: 2,
+          pointBackgroundColor: '#74b9ff',
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.4,
+          borderDash: [4, 3],
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(26,10,0,0.95)',
+          borderColor: 'rgba(255,107,0,0.3)',
+          borderWidth: 1,
+          titleColor: '#FFB347',
+          bodyColor: '#FFF5E6',
+          padding: 10,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}°C`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,107,0,0.07)' },
+          ticks: { color: 'rgba(255,245,230,0.45)', font: { size: 11 } },
+          border: { color: 'rgba(255,107,0,0.15)' }
+        },
+        y: {
+          grid: { color: 'rgba(255,107,0,0.07)' },
+          ticks: { color: 'rgba(255,245,230,0.45)', font: { size: 11 }, callback: v => v + '°' },
+          border: { color: 'rgba(255,107,0,0.15)' }
+        }
+      }
+    }
+  });
+}
+
+// ==========================================
+// AI TANÁCS – INJECT POINT (n8n tölti fel)
+// ==========================================
+// Az n8n workflow ezt a sort cseréli le:
+const AI_TANACS = "{{AI_TANACS}}";
+if (AI_TANACS && AI_TANACS !== "{{AI_TANACS}}") {
+  document.getElementById('aiTanacs').textContent = AI_TANACS;
+} else {
+  // Ha nincs n8n adat, az API alapján generál egyet
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=47.4979&longitude=19.0402&current=temperature_2m&timezone=Europe/Budapest')
+    .then(r => r.json())
+    .then(d => {
+      const t = d.current.temperature_2m;
+      if (t < 0) document.getElementById('aiTanacs').textContent = 'Téli ruházat ajánlott: vastag kabát, kesztyű és sapka szükséges a hideg ellen.';
+      else if (t < 10) document.getElementById('aiTanacs').textContent = 'Hűvös az idő, meleg kabát és rétegzett öltözet javasolt.';
+      else if (t < 18) document.getElementById('aiTanacs').textContent = 'Kellemes hőmérséklet, könnyű kabát vagy pulóver elegendő.';
+      else if (t < 25) document.getElementById('aiTanacs').textContent = 'Szép idő, könnyű öltözet megfelelő. Napszemüveg ajánlott.';
+      else document.getElementById('aiTanacs').textContent = 'Meleg van! Könnyű, légáteresztő ruha és fényvédő javasolt.';
+    });
+}
+
+// Betöltés
+loadWeather();
+// 30 percenkénti frissítés
+setInterval(loadWeather, 30 * 60 * 1000);
+</script>
+</body>
+</html>
