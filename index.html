@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magyar Hírek Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --border: #e8e2d9;
+    --accent: #c0392b;
+    --accent2: #2c3e50;
+    --text: #1a1a2e;
+    --muted: #7f8c8d;
+    --tag-bg: #eef2f7;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--accent);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon {
+    width: 42px; height: 42px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .header-date {
+    font-size: 0.82rem;
+    color: var(--muted);
+    background: var(--tag-bg);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    background: #27ae60;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* LAYOUT */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+  }
+
+  /* FILTERS */
+  .filters {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-right: 4px;
+  }
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    color: var(--text);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .search-box {
+    margin-left: auto;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    font-size: 0.82rem;
+    font-family: 'Source Sans 3', sans-serif;
+    outline: none;
+    width: 200px;
+    transition: all 0.2s;
+  }
+  .search-box:focus {
+    border-color: var(--accent);
+    width: 240px;
+  }
+
+  /* NEWS TABLE */
+  .news-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .count-badge {
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .news-table { width: 100%; border-collapse: collapse; }
+  .news-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: #fafaf8;
+    font-weight: 600;
+  }
+  .news-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #f0ece6;
+    font-size: 0.87rem;
+    vertical-align: middle;
+  }
+  .news-table tr:last-child td { border-bottom: none; }
+  .news-table tr:hover td { background: #fdf9f7; }
+
+  .news-link {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 400;
+    line-height: 1.4;
+    display: block;
+    max-width: 420px;
+    transition: color 0.15s;
+  }
+  .news-link:hover { color: var(--accent); text-decoration: underline; }
+
+  .kat-tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: var(--tag-bg);
+    color: var(--accent2);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .forras-badge {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .datum-cell {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+  /* AI SUMMARY */
+  .ai-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .ai-header {
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--accent2), #34495e);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ai-header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+  }
+  .ai-body {
+    padding: 18px 20px;
+    max-height: 340px;
+    overflow-y: auto;
+    font-size: 0.84rem;
+    line-height: 1.65;
+    color: #333;
+  }
+  .ai-body h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: var(--accent2);
+    margin: 12px 0 6px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+  .ai-body p { margin-bottom: 10px; }
+  .ai-body strong { color: var(--accent2); }
+
+  /* SOURCE CHART */
+  .chart-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 0;
+    overflow: hidden;
+  }
+  .chart-body { padding: 16px 20px; }
+  .source-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .source-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    width: 90px;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  .bar-wrap {
+    flex: 1;
+    background: var(--tag-bg);
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), #e74c3c);
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+  .bar-count {
+    font-size: 0.78rem;
+    color: var(--muted);
+    width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* CATEGORY PILLS */
+  .cat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 16px 20px;
+  }
+  .cat-pill {
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .cat-pill:hover { background: var(--accent); color: white; border-color: var(--accent); }
+  .cat-pill .pill-count {
+    background: rgba(0,0,0,0.1);
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+  }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .page-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    cursor: pointer;
+    font-size: 0.82rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--text);
+  }
+  .page-btn:hover, .page-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .page-info { font-size: 0.78rem; color: var(--muted); padding: 0 8px; }
+
+  /* EMPTY */
+  .empty-row td {
+    text-align: center;
+    color: var(--muted);
+    padding: 32px !important;
+    font-style: italic;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">📰</div>
+    <div>
+      <h1>Magyar Hírek Dashboard</h1>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">PowerBI Hírek · adatok lap</div>
+    </div>
+  </div>
+  <div class="header-date">
+    <span class="live-dot"></span>
+    <span id="currentDate">Betöltés...</span>
+  </div>
+</div>
+
+<div class="container">
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">📋 Összes hír</div>
+      <div class="stat-value" id="totalNews">0</div>
+      <div class="stat-sub">mai napon</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">🗂️ Kategóriák</div>
+      <div class="stat-value" id="totalCats">0</div>
+      <div class="stat-sub">különböző téma</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">📡 Források</div>
+      <div class="stat-value" id="totalSources">0</div>
+      <div class="stat-sub">hírportál</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">🤖 AI összefoglaló</div>
+      <div class="stat-value" id="totalAI">0</div>
+      <div class="stat-sub">generált összefoglaló</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-grid">
+    <div>
+      <!-- FILTERS -->
+      <div class="filters">
+        <span class="filter-label">🔍 Forrás:</span>
+        <button class="filter-btn active" onclick="filterSource('mind', this)">Mind</button>
+        <button class="filter-btn" onclick="filterSource('telex.hu', this)">Telex</button>
+        <button class="filter-btn" onclick="filterSource('index.hu', this)">Index</button>
+        <button class="filter-btn" onclick="filterSource('hvg.hu', this)">HVG</button>
+        <button class="filter-btn" onclick="filterSource('444.hu', this)">444</button>
+        <button class="filter-btn" onclick="filterSource('portfolio.hu', this)">Portfolio</button>
+        <button class="filter-btn" onclick="filterSource('24.hu', this)">24.hu</button>
+        <input type="text" class="search-box" id="searchBox" placeholder="🔎 Keresés..." oninput="doSearch()">
+      </div>
+
+      <!-- NEWS TABLE -->
+      <div class="news-card">
+        <div class="card-header">
+          <div class="card-title">📰 Magyar Hírek</div>
+          <span class="count-badge" id="newsCount">0 hír</span>
+        </div>
+        <table class="news-table">
+          <thead>
+            <tr>
+              <th>Cím</th>
+              <th>Kategória</th>
+              <th>Forrás</th>
+              <th>Dátum</th>
+            </tr>
+          </thead>
+          <tbody id="newsBody">
+            <tr class="empty-row"><td colspan="4">⏳ Adatok betöltése...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- AI SUMMARY -->
+      <div class="ai-card">
+        <div class="ai-header">
+          <span style="font-size:1.2rem">🤖</span>
+          <div class="ai-header-title">Napi AI Összefoglaló</div>
+        </div>
+        <div class="ai-body" id="aiSummary">
+          <p style="color:var(--muted);font-style:italic">AI összefoglaló betöltése...</p>
+        </div>
+      </div>
+
+      <!-- SOURCE CHART -->
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">📊 Forrás statisztika</div>
+        </div>
+        <div class="chart-body" id="sourceChart">
+          <p style="color:var(--muted);font-size:0.82rem">Betöltés...</p>
+        </div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">🏷️ Kategóriák</div>
+        </div>
+        <div class="cat-grid" id="catGrid">
+          <p style="color:var(--muted);font-size:0.82rem">Betöltés...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// KONFIGURÁCIÓ - IDE ILLESZD BE A GOOGLE SHEETS API ADATOKAT
+// ============================================================
+const SHEET_ID = '1iyJHxQQPjtqN_2mWyHfdDeH-5aKIdH2WHSyPv_-xrAY';
+const API_KEY = 'AIzaSyDPPqWQIzAgeBq-vW0078z6RVnMqREIg4o; // <-- CSERÉLD KI!
+const SHEET_NAME = 'adatok';
+// ============================================================
+
+// DEMO adatok - amíg nincs API kulcs
+const DEMO_DATA = [
+  {Datum:'2026-02-24',Tipus:'hir',cim:'A Bayern edzője szerint a fekete futballisták nem kapnak támogatást Magyarországon',osszefoglalo:'',cikk_url:'https://telex.hu/sport/2026/02/23/schmidt-adam-uefa-vincent-kompany',Forras:'https://telex.hu',Kategoria:'Sport'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Szoboszlai: Mi, magyarok a fociban alábecsüljük magunkat',osszefoglalo:'',cikk_url:'https://telex.hu/sport/2026/02/23/szoboszlai-dominik',Forras:'https://telex.hu',Kategoria:'Sport'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Magyar Péter: Mit folytatnak? Azt mondják a szögediek, hogy a lopást!',osszefoglalo:'',cikk_url:'https://telex.hu/belfold/2026/02/23/magyar-peter',Forras:'https://telex.hu',Kategoria:'Belföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Nagy Márton megnevezett négyet abból az öt bankból',osszefoglalo:'',cikk_url:'https://telex.hu/gazdasag/2026/02/23/nagy-marton',Forras:'https://telex.hu',Kategoria:'Gazdaság'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Csercsa Balázs feljelentést tett rágalmazás miatt',osszefoglalo:'',cikk_url:'https://index.hu/belfold/2026/02/24/csercsa',Forras:'https://index.hu',Kategoria:'Belföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Nagy változás a magyarországi Rossmann élén: távozik a vezér',osszefoglalo:'',cikk_url:'https://index.hu/gazdasag/2026/02/24/rossmann',Forras:'https://index.hu',Kategoria:'Gazdaság'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Jöhet a nagy drogtesztpárbaj Magyar Péter és Kocsis Máté között',osszefoglalo:'',cikk_url:'https://index.hu/belfold/2026/02/24/kocsis',Forras:'https://index.hu',Kategoria:'Belföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Olyan dolgot tett Ukrajna a Barátság kőolajvezetékkel',osszefoglalo:'',cikk_url:'https://index.hu/gazdasag/2026/02/24/ukrajna',Forras:'https://index.hu',Kategoria:'Gazdaság'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Miért gyűlöli annyira Ukrajnát Magyarország? – kérdezték Brüsszelben Szijjártótól',osszefoglalo:'',cikk_url:'https://hvg.hu/360/20260224',Forras:'https://hvg.hu',Kategoria:'Külföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Kocsis Máté elmenne egy drogtesztre Magyar Péterrel',osszefoglalo:'',cikk_url:'https://hvg.hu/itthon/20260224',Forras:'https://hvg.hu',Kategoria:'Belföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Orbán Viktor: a kárpátaljai magyarok védelmében nem állítottuk le az áramexportot',osszefoglalo:'',cikk_url:'https://hvg.hu/gazdasag/20260223',Forras:'https://hvg.hu',Kategoria:'Gazdaság'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Mexikói pokol, magyar purgatórium',osszefoglalo:'',cikk_url:'https://444.hu/2026/02/24/mexikoi',Forras:'https://444.hu',Kategoria:'Külföld'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Közel másfél éve nem történt ilyen Magyarországon - Most eldőlhet a forint sorsa',osszefoglalo:'',cikk_url:'https://www.portfolio.hu/deviza/20260224',Forras:'https://www.portfolio.hu',Kategoria:'Deviza'},
+  {Datum:'2026-02-24',Tipus:'hir',cim:'Ellentámadásba lendült Ukrajna, lépett Kijev ellen Magyarország szomszédja',osszefoglalo:'',cikk_url:'https://www.portfolio.hu/global/20260224',Forras:'https://www.portfolio.hu',Kategoria:'Külföld'},
+  {Datum:'2026-02-24',Tipus:'ai_osszefoglalo',cim:'Napi AI Összefoglaló',osszefoglalo:'<h2>Mai Hírek Összefoglalója</h2><p>A mai napon számos érdekes és fontos eseményről szereztünk tudomást. Kezdve a gazdasági helyzettel, Csehországban az ingatlanárak emelkedése figyelemreméltó.</p><h2>Politika</h2><p>Magyar Péter és Kocsis Máté drogtesztvitája folytatódik. Az ukrajna-orosz konfliktus hatásai tovább gyűrűznek Magyarországon.</p><h2>Gazdaság</h2><p>A forint sorsa eldőlhet a következő napokban. Nagy Márton bankrendszeri tervei vitát kavartak.</p>',cikk_url:'',Forras:'AI Agent',Kategoria:''},
+];
+
+let allData = [];
+let filteredData = [];
+let currentSource = 'mind';
+let currentSearch = '';
+let currentPage = 1;
+const PAGE_SIZE = 12;
+
+async function loadData() {
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('API hiba');
+    const json = await resp.json();
+    const rows = json.values || [];
+    if (rows.length < 2) throw new Error('Nincs adat');
+    const headers = rows[0];
+    allData = rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i] || '');
+      return obj;
+    });
+  } catch(e) {
+    console.log('Demo adatok használata:', e.message);
+    allData = DEMO_DATA;
+  }
+  renderAll();
+}
+
+function renderAll() {
+  const today = new Date().toLocaleDateString('hu-HU', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  document.getElementById('currentDate').textContent = today;
+
+  const hirek = allData.filter(r => r.Tipus === 'hir');
+  const aiRows = allData.filter(r => r.Tipus === 'ai_osszefoglalo');
+  const cats = [...new Set(hirek.map(r => r.Kategoria).filter(Boolean))];
+  const sources = [...new Set(hirek.map(r => {
+    try { return new URL(r.Forras).hostname.replace('www.',''); } catch { return r.Forras; }
+  }).filter(Boolean))];
+
+  document.getElementById('totalNews').textContent = hirek.length;
+  document.getElementById('totalCats').textContent = cats.length;
+  document.getElementById('totalSources').textContent = sources.length;
+  document.getElementById('totalAI').textContent = aiRows.length;
+
+  // AI summary
+  if (aiRows.length > 0) {
+    const latest = aiRows[aiRows.length - 1];
+    document.getElementById('aiSummary').innerHTML = latest.osszefoglalo || latest.cim;
+  }
+
+  // Source chart
+  const srcCount = {};
+  hirek.forEach(r => {
+    let s = r.Forras;
+    try { s = new URL(r.Forras).hostname.replace('www.',''); } catch {}
+    srcCount[s] = (srcCount[s] || 0) + 1;
+  });
+  const maxCount = Math.max(...Object.values(srcCount));
+  const srcHtml = Object.entries(srcCount).sort((a,b) => b[1]-a[1]).map(([s, c]) => `
+    <div class="source-row">
+      <div class="source-name">${s}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${(c/maxCount*100).toFixed(0)}%"></div></div>
+      <div class="bar-count">${c}</div>
+    </div>`).join('');
+  document.getElementById('sourceChart').innerHTML = srcHtml;
+
+  // Category pills
+  const catCount = {};
+  hirek.forEach(r => {
+    if (r.Kategoria) catCount[r.Kategoria] = (catCount[r.Kategoria] || 0) + 1;
+  });
+  const catHtml = Object.entries(catCount).sort((a,b) => b[1]-a[1]).map(([c, n]) => `
+    <div class="cat-pill" onclick="filterCat('${c}')">
+      ${c} <span class="pill-count">${n}</span>
+    </div>`).join('');
+  document.getElementById('catGrid').innerHTML = catHtml;
+
+  applyFilters();
+}
+
+function applyFilters() {
+  const hirek = allData.filter(r => r.Tipus === 'hir');
+  filteredData = hirek.filter(r => {
+    let src = r.Forras;
+    try { src = new URL(r.Forras).hostname.replace('www.',''); } catch {}
+    const srcMatch = currentSource === 'mind' || src.includes(currentSource);
+    const searchMatch = !currentSearch || r.cim.toLowerCase().includes(currentSearch.toLowerCase());
+    return srcMatch && searchMatch;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const total = filteredData.length;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, total);
+  const pageData = filteredData.slice(start, end);
+
+  document.getElementById('newsCount').textContent = `${total} hír`;
+
+  if (pageData.length === 0) {
+    document.getElementById('newsBody').innerHTML = '<tr class="empty-row"><td colspan="4">🔍 Nincs találat</td></tr>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  const rows = pageData.map(r => {
+    let srcName = r.Forras;
+    try { srcName = new URL(r.Forras).hostname.replace('www.',''); } catch {}
+    const kat = r.Kategoria ? `<span class="kat-tag">${r.Kategoria}</span>` : '<span style="color:var(--muted)">—</span>';
+    const link = r.cikk_url ? `<a href="${r.cikk_url}" target="_blank" class="news-link">${r.cim}</a>` : `<span class="news-link">${r.cim}</span>`;
+    return `<tr>
+      <td>${link}</td>
+      <td>${kat}</td>
+      <td><span class="forras-badge">${srcName}</span></td>
+      <td><span class="datum-cell">${r.Datum}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('newsBody').innerHTML = rows;
+
+  // Pagination
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+  let pag = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    pag += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  pag += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  pag += `<span class="page-info">${start+1}–${end} / ${total}</span>`;
+  document.getElementById('pagination').innerHTML = pag;
+}
+
+function filterSource(src, btn) {
+  currentSource = src;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterCat(cat) {
+  document.getElementById('searchBox').value = cat;
+  currentSearch = cat;
+  applyFilters();
+}
+
+function doSearch() {
+  currentSearch = document.getElementById('searchBox').value;
+  applyFilters();
+}
+
+function goPage(p) {
+  const total = Math.ceil(filteredData.length / PAGE_SIZE);
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.news-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+loadData();
+</script>
+</body>
+</html>
